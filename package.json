@@ -1,0 +1,28 @@
+{
+  "name": "r2-status",
+  "private": true,
+  "version": "0.0.1",
+  "scripts": {
+    "build": "esbuild --bundle --sourcemap --minify --target=esnext --format=esm --outdir=dist --out-extension:.js=.mjs ./src/index.ts",
+    "dev": "miniflare --live-reload --debug --modules",
+    "deploy": "wrangler publish",
+    "tail": "wrangler tail latency-checks >> test.txt"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "concurrent-promise-queue": "^1.0.2",
+    "hono": "^1.5.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^3.14.1",
+    "@types/jest": "^28.1.0",
+    "esbuild": "0.14.47",
+    "esbuild-jest": "0.5.0",
+    "jest": "28.1.1",
+    "jest-environment-miniflare": "^2.5.1",
+    "wrangler": "^2.0.15"
+  },
+  "volta": {
+    "node": "16.7.0"
+  }
+}

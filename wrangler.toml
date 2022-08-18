@@ -1,0 +1,72 @@
+name = "latency-checks"
+main = "dist/index.mjs"
+
+workers_dev = false
+account_id = "dc941e8156f4a1336ca08481cb6d4222"
+
+usage_model = "bundled"
+
+compatibility_date = "2022-08-02"
+compatibility_flags = []
+
+routes = [
+	{ pattern = "latency.garretcharp.com", custom_domain = true }
+]
+
+r2_buckets = [
+	{ binding = "BUCKET_AMS", bucket_name = "r2-status-ams" },
+	{ binding = "BUCKET_ARN", bucket_name = "r2-status-arn" },
+	{ binding = "BUCKET_ATL", bucket_name = "r2-status-atl" },
+	{ binding = "BUCKET_CDG", bucket_name = "r2-status-cdg" },
+	{ binding = "BUCKET_DEN", bucket_name = "r2-status-den" },
+	{ binding = "BUCKET_DFW", bucket_name = "r2-status-dfw" },
+	{ binding = "BUCKET_EWR", bucket_name = "r2-status-ewr" },
+	{ binding = "BUCKET_FRA", bucket_name = "r2-status-fra" },
+	{ binding = "BUCKET_HKG", bucket_name = "r2-status-hkg" },
+	{ binding = "BUCKET_IAD", bucket_name = "r2-status-iad" },
+	{ binding = "BUCKET_KIX", bucket_name = "r2-status-kix" },
+	{ binding = "BUCKET_LAX", bucket_name = "r2-status-lax" },
+	{ binding = "BUCKET_LHR", bucket_name = "r2-status-lhr" },
+	{ binding = "BUCKET_MAD", bucket_name = "r2-status-mad" },
+	{ binding = "BUCKET_MIA", bucket_name = "r2-status-mia" },
+	{ binding = "BUCKET_MRS", bucket_name = "r2-status-mrs" },
+	{ binding = "BUCKET_MXP", bucket_name = "r2-status-mxp" },
+	{ binding = "BUCKET_NRT", bucket_name = "r2-status-nrt" },
+	{ binding = "BUCKET_ORD", bucket_name = "r2-status-ord" },
+	{ binding = "BUCKET_PRG", bucket_name = "r2-status-prg" },
+	{ binding = "BUCKET_SEA", bucket_name = "r2-status-sea" },
+	{ binding = "BUCKET_SIN", bucket_name = "r2-status-sin" },
+	{ binding = "BUCKET_SJC", bucket_name = "r2-status-sjc" },
+	{ binding = "BUCKET_TPE", bucket_name = "r2-status-tpe" },
+	{ binding = "BUCKET_VIE", bucket_name = "r2-status-vie" }
+]
+
+kv_namespaces = [
+	{ binding = "Tracking", id = "a8b0a340ea024aa482ee90347bdc6d4a" }
+]
+
+[durable_objects]
+bindings = [
+	{ name = "AggregationJobs", class_name = "AggregationJobs" }
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["AggregationJobs"]
+
+# [[unsafe.bindings]]
+# type = "analytics_engine"
+# name = "LatencyAnalytics"
+# dataset = "testanalytics"
+
+[vars]
+KV_NAMESPACE = "a8b0a340ea024aa482ee90347bdc6d4a"
+ACCOUNT_ID = "dc941e8156f4a1336ca08481cb6d4222"
+
+[build]
+command = "npm run build"
+
+[triggers]
+crons = [
+	"* * * * *"
+]
