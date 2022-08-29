@@ -32,12 +32,5 @@ interface Bindings {
 		}) => void
 	}
 
-	AggregationJobs: DurableObjectNamespace
-
-	Tracking: KVNamespace
-
 	LB_POOL_ID: string
-	KV_API_KEY: string
-	KV_NAMESPACE: string
-	ACCOUNT_ID: string
 }
