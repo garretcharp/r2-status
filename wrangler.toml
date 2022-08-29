@@ -54,10 +54,10 @@ bindings = [
 tag = "v1"
 new_classes = ["AggregationJobs"]
 
-# [[unsafe.bindings]]
-# type = "analytics_engine"
-# name = "LatencyAnalytics"
-# dataset = "testanalytics"
+[[unsafe.bindings]]
+type = "analytics_engine"
+name = "LatencyAnalytics"
+dataset = "testanalytics"
 
 [vars]
 KV_NAMESPACE = "a8b0a340ea024aa482ee90347bdc6d4a"

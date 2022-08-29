@@ -70,6 +70,17 @@ app.get('/track/r2', async c => {
 
 			if (data.length === 0) return Promise.resolve()
 
+			for (const result of results) {
+				if (result.status === 'rejected') continue
+
+				const { value } = result
+
+				c.env.LatencyAnalytics.writeDataPoint({
+					blobs: ['R2', value.source, caller, value.operation, `${value.bytes}`],
+					doubles: [value.latency]
+				})
+			}
+
 			return c.env.Tracking.put(`TimeSeries/R2/${time}/${caller}/${operation}/${bytes}`, '', {
 				metadata: data.reduce((acc, { value }) => {
 					return { ...acc, [value.source]: value.latency }
@@ -416,15 +427,6 @@ app.get('/logs', async c => {
 		c.env.AggregationJobs.idFromName('AggregationJobs')
 	).fetch('https://fake-host/logs')
 })
-
-// app.get('/test', async c => {
-// 	c.env.LatencyAnalytics.writeDataPoint({
-// 		blobs: ['R2', 'DFW', 'LAX', 'get', '1000000', 'up'],
-// 		doubles: [1431]
-// 	})
-
-// 	return c.json({ ok: true })
-// })
 
 export default {
 	fetch(request: Request, env: Bindings, ctx: ExecutionContext) {
