@@ -1,59 +1,102 @@
 import { Hono } from 'hono'
-import { getColoRangeNumber, getR2OperationLatency, R2Operation, R2_DATA_CENTERS } from './utils'
-
-const STARTED = 1660172400000
-
-const FILE_SIZES = [
-	0,
-	1000000,
-	5000000,
-	25000000
-]
-
-const OPTIONS: ([R2Operation, number, string[]])[] = []
-
-for (const sources of R2_DATA_CENTERS) {
-	for (const BYTES of FILE_SIZES) {
-		OPTIONS.push(['get', BYTES, sources])
-		OPTIONS.push(['put', BYTES, sources])
-	}
-}
+import { OperationsManager, OperationsState } from './manager'
+import { getR2OperationLatency, promiseResult } from './utils'
 
 const app = new Hono<Bindings>()
 
 app.get('/track/r2', async c => {
-	const agent = c.req.headers.get('user-agent')
-	if (!c.req.cf || !agent?.includes(c.env.LB_POOL_ID)) return c.json({ error: 'invalid request' }, 400)
+	// const agent = c.req.headers.get('user-agent')
+	// if (!c.req.cf || !agent?.includes(c.env.LB_POOL_ID)) {
+	// 	c.env.ErrorAnalytics.writeDataPoint({
+	// 		blobs: ['NONE', c.req.cf?.colo?.slice(0, 3) ?? 'IDK', 'request:TrackR2', ''],
+	// 		doubles: [1]
+	// 	})
 
-	const caller = c.req.cf.colo.slice(0, 3), minutesSinceStart = Math.floor(((Date.now() - STARTED) / 1000) / 60)
-	const [operation, bytes, sources] = OPTIONS[(minutesSinceStart + getColoRangeNumber(caller)) % OPTIONS.length]
+	// 	return c.json({ error: 'invalid request' }, 400)
+	// }
+
+	const colo = c.req.cf!.colo.slice(0, 3).toUpperCase()
+	const id = c.env.OperationsManager.idFromName(colo)
+	const res = await promiseResult(c.env.OperationsManager.get(id).fetch('https://fake-host/'))
+
+	if (res[0] === null || !res[0].ok) {
+		c.env.ErrorAnalytics.writeDataPoint({
+			blobs: ['DO', colo, 'fetch:OperationsManagerCurrentState', id.toString()],
+			doubles: [1]
+		})
+
+		return c.json({ error: 'cannot get current operation state' }, 503)
+	}
+
+	const state = await res[0].json<OperationsState>()
 
 	c.executionCtx?.waitUntil(
-		Promise.allSettled(
-			sources.map(async source => {
-				return getR2OperationLatency({
-					env: c.env,
-					colo: caller,
-					bytes,
-					source,
-					operation
-				})
+		Promise.allSettled([
+			getR2OperationLatency({
+				bytes: state.dfw.bytes,
+				source: c.env.BUCKET_DFW,
+				operation: state.dfw.operation,
+				file: state.dfw.file
+			}),
+			getR2OperationLatency({
+				bytes: state.lhr.bytes,
+				source: c.env.BUCKET_LHR,
+				operation: state.lhr.operation,
+				file: state.lhr.file
 			})
-		).then(results => {
-			for (const result of results) {
-				if (result.status === 'rejected') continue
-
-				const { value } = result
-
+		]).then(([dfw, lhr]) => {
+			if (dfw.status === 'fulfilled') {
 				c.env.LatencyAnalytics.writeDataPoint({
-					blobs: ['R2', value.source, caller, value.operation, `${value.bytes}`],
-					doubles: [value.latency]
+					blobs: ['R2', 'DFW', colo, state.dfw.operation, `${state.dfw.bytes}`],
+					doubles: [dfw.value.latency]
+				})
+			} else {
+				c.env.ErrorAnalytics.writeDataPoint({
+					blobs: ['R2:DFW', colo, `${state.dfw.operation}:${state.dfw.bytes}`, state.dfw.file],
+					doubles: [1]
 				})
 			}
+
+			if (lhr.status === 'fulfilled') {
+				c.env.LatencyAnalytics.writeDataPoint({
+					blobs: ['R2', 'LHR', colo, state.lhr.operation, `${state.lhr.bytes}`],
+					doubles: [lhr.value.latency]
+				})
+			} else {
+				c.env.ErrorAnalytics.writeDataPoint({
+					blobs: ['R2:LHR', colo, `${state.lhr.operation}:${state.lhr.bytes}`, state.lhr.file],
+					doubles: [1]
+				})
+			}
+
+			const results = {
+				dfw: {
+					success: dfw.status === 'fulfilled',
+					file: state.dfw.file,
+					operation: state.dfw.operation,
+					bytes: state.dfw.bytes
+				},
+				lhr: {
+					success: lhr.status === 'fulfilled',
+					file: state.lhr.file,
+					operation: state.lhr.operation,
+					bytes: state.lhr.bytes
+				}
+			}
+
+			return c.env.OperationsManager.get(id).fetch('https://fake-host/', {
+				method: 'POST',
+				body: JSON.stringify(results)
+			})
+		}).catch(() => {
+			c.env.ErrorAnalytics.writeDataPoint({
+				blobs: ['DO', colo, 'fetch:OperationsManagerCompleteOperation', id.toString()],
+				doubles: [1]
+			})
 		})
 	)
 
-	return c.json({ queued: true, message: `Queued ${operation} operation for file of ${bytes} bytes to the following buckets: [${sources.join(', ')}]` })
+	return c.json({ queued: true, state })
 })
 
 export default {
@@ -61,3 +104,5 @@ export default {
 		return app.fetch(request, env, ctx)
 	}
 }
+
+export { OperationsManager }

@@ -6,7 +6,7 @@
     "build": "esbuild --bundle --sourcemap --minify --target=esnext --format=esm --outdir=dist --out-extension:.js=.mjs ./src/index.ts",
     "dev": "miniflare --live-reload --debug --modules",
     "deploy": "wrangler publish",
-    "tail": "wrangler tail latency-checks >> test.txt"
+    "tail": "wrangler tail latency-checks"
   },
   "license": "MIT",
   "dependencies": {
