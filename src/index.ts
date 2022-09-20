@@ -20,8 +20,9 @@ app.get('/track/r2', async c => {
 	const res = await promiseResult(c.env.OperationsManager.get(id).fetch('https://fake-host/'))
 
 	if (res[0] === null || !res[0].ok) {
+		const error = res[0] === null ? res[1].message : await res[0].text()
 		c.env.ErrorAnalytics.writeDataPoint({
-			blobs: ['DO', colo, 'fetch:OperationsManagerCurrentState', id.toString()],
+			blobs: ['DO', colo, 'fetch:OperationsManagerCurrentState', id.toString(), error],
 			doubles: [1]
 		})
 
@@ -52,7 +53,7 @@ app.get('/track/r2', async c => {
 				})
 			} else {
 				c.env.ErrorAnalytics.writeDataPoint({
-					blobs: ['R2:DFW', colo, `${state.dfw.operation}:${state.dfw.bytes}`, state.dfw.file],
+					blobs: ['R2:DFW', colo, `${state.dfw.operation}:${state.dfw.bytes}`, state.dfw.file, (dfw.reason as any).message],
 					doubles: [1]
 				})
 			}
@@ -64,7 +65,7 @@ app.get('/track/r2', async c => {
 				})
 			} else {
 				c.env.ErrorAnalytics.writeDataPoint({
-					blobs: ['R2:LHR', colo, `${state.lhr.operation}:${state.lhr.bytes}`, state.lhr.file],
+					blobs: ['R2:LHR', colo, `${state.lhr.operation}:${state.lhr.bytes}`, state.lhr.file, (lhr.reason as any).message],
 					doubles: [1]
 				})
 			}
@@ -88,9 +89,9 @@ app.get('/track/r2', async c => {
 				method: 'POST',
 				body: JSON.stringify(results)
 			})
-		}).catch(() => {
+		}).catch((err: Error) => {
 			c.env.ErrorAnalytics.writeDataPoint({
-				blobs: ['DO', colo, 'fetch:OperationsManagerCompleteOperation', id.toString()],
+				blobs: ['DO', colo, 'fetch:OperationsManagerCompleteOperation', id.toString(), err.message],
 				doubles: [1]
 			})
 		})

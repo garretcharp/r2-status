@@ -43,7 +43,7 @@ interface Bindings {
 
 	ErrorAnalytics: {
 		writeDataPoint: (point: {
-			blobs: [Service, Colo, Operation, string]
+			blobs: [Service, Colo, Operation, string, string]
 			doubles: [1]
 		}) => void
 	}
