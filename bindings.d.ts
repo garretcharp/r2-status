@@ -36,7 +36,7 @@ interface Bindings {
 
 	LatencyAnalytics: {
 		writeDataPoint: (point: {
-			blobs: ['R2', BucketSource, Colo, Operation, `${number}`]
+			blobs: ['R2', BucketSource, Colo, Operation, `${number}`, string]
 			doubles: [number]
 		}) => void
 	}

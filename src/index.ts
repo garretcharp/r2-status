@@ -48,24 +48,24 @@ app.get('/track/r2', async c => {
 		]).then(([dfw, lhr]) => {
 			if (dfw.status === 'fulfilled' && dfw.value.latency !== -1) {
 				c.env.LatencyAnalytics.writeDataPoint({
-					blobs: ['R2', 'DFW', colo, state.dfw.operation, `${state.dfw.bytes}`],
+					blobs: ['R2', 'DFW', colo, state.dfw.operation, `${state.dfw.bytes}`, state.dfw.file],
 					doubles: [dfw.value.latency]
 				})
-			} else if (dfw.status !== 'fulfilled') {
+			} else {
 				c.env.ErrorAnalytics.writeDataPoint({
-					blobs: ['R2:DFW', colo, `${state.dfw.operation}:${state.dfw.bytes}`, state.dfw.file, (dfw.reason as any).message],
+					blobs: ['R2:DFW', colo, `${state.dfw.operation}:${state.dfw.bytes}`, state.dfw.file, (dfw as any).reason ? (dfw as any).reason.message : `File not found`],
 					doubles: [1]
 				})
 			}
 
 			if (lhr.status === 'fulfilled' && lhr.value.latency !== -1) {
 				c.env.LatencyAnalytics.writeDataPoint({
-					blobs: ['R2', 'LHR', colo, state.lhr.operation, `${state.lhr.bytes}`],
+					blobs: ['R2', 'LHR', colo, state.lhr.operation, `${state.lhr.bytes}`, state.lhr.file],
 					doubles: [lhr.value.latency]
 				})
-			} else if (lhr.status !== 'fulfilled') {
+			} else {
 				c.env.ErrorAnalytics.writeDataPoint({
-					blobs: ['R2:LHR', colo, `${state.lhr.operation}:${state.lhr.bytes}`, state.lhr.file, (lhr.reason as any).message],
+					blobs: ['R2:LHR', colo, `${state.lhr.operation}:${state.lhr.bytes}`, state.lhr.file, (lhr as any).reason ? (lhr as any).reason.message : `File not found`],
 					doubles: [1]
 				})
 			}
