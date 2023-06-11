@@ -22,7 +22,7 @@ export const getR2OperationLatency = async ({ bytes, source, operation, file }: 
 			const v = await source.get(file)
 
 			if (v === null) {
-				throw new Error('File not found')
+				return { latency: -1 }
 			} else {
 				await v.text()
 			}

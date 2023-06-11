@@ -46,24 +46,24 @@ app.get('/track/r2', async c => {
 				file: state.lhr.file
 			})
 		]).then(([dfw, lhr]) => {
-			if (dfw.status === 'fulfilled') {
+			if (dfw.status === 'fulfilled' && dfw.value.latency !== -1) {
 				c.env.LatencyAnalytics.writeDataPoint({
 					blobs: ['R2', 'DFW', colo, state.dfw.operation, `${state.dfw.bytes}`],
 					doubles: [dfw.value.latency]
 				})
-			} else {
+			} else if (dfw.status !== 'fulfilled') {
 				c.env.ErrorAnalytics.writeDataPoint({
 					blobs: ['R2:DFW', colo, `${state.dfw.operation}:${state.dfw.bytes}`, state.dfw.file, (dfw.reason as any).message],
 					doubles: [1]
 				})
 			}
 
-			if (lhr.status === 'fulfilled') {
+			if (lhr.status === 'fulfilled' && lhr.value.latency !== -1) {
 				c.env.LatencyAnalytics.writeDataPoint({
 					blobs: ['R2', 'LHR', colo, state.lhr.operation, `${state.lhr.bytes}`],
 					doubles: [lhr.value.latency]
 				})
-			} else {
+			} else if (lhr.status !== 'fulfilled') {
 				c.env.ErrorAnalytics.writeDataPoint({
 					blobs: ['R2:LHR', colo, `${state.lhr.operation}:${state.lhr.bytes}`, state.lhr.file, (lhr.reason as any).message],
 					doubles: [1]
